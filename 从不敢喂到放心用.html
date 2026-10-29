@@ -1,0 +1,872 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>从"不敢喂"到"放心用" · AI财务数据分析的价值分享</title>
+<style>
+:root{--g900:#14532d;--g800:#166534;--g700:#15803d;--g600:#16a34a;--g500:#22c55e;--g100:#dcfce7;--g50:#f0fdf4;
+--gold:#d97706;--goldbg:#fffbeb;--red:#dc2626;--ink:#1f2937;--mut:#6b7280;--bd:#e5e7eb;--bg:#f2f4f3}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;background:#e0e5e3}
+body{font-family:"Microsoft YaHei","PingFang SC",system-ui,sans-serif;color:var(--ink)}
+#stage{position:absolute;left:50%;top:50%;width:1920px;height:1080px;background:var(--bg);transform-origin:center;box-shadow:0 10px 70px rgba(0,0,0,.2);overflow:hidden}
+/* ---------- 左侧导航 ---------- */
+#nav{position:absolute;left:0;top:0;bottom:0;width:270px;background:#fff;border-right:1px solid var(--bd);display:flex;flex-direction:column;z-index:5;transition:opacity .4s}
+#stage.navhide #nav,#stage.navhide #pagenum,#stage.navhide #keyhint,#stage.navhide #track{opacity:0;pointer-events:none}
+.nhead{padding:24px 22px 16px;border-bottom:1px solid var(--bd)}
+.nhead .dot{width:12px;height:12px;border-radius:4px;background:linear-gradient(135deg,var(--g600),var(--gold));display:inline-block;margin-right:9px}
+.nhead b{font-size:18px;color:var(--g900)}
+.nhead small{display:block;font-size:13px;color:var(--mut);margin-top:6px;letter-spacing:1px}
+.nlist{flex:1;overflow-y:auto;padding:12px}
+.ngrp{font-size:13px;color:#9ca3af;padding:14px 12px 6px;letter-spacing:2px;font-weight:700}
+.ni{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;color:var(--mut);font-size:16.5px;cursor:pointer;transition:.25s}
+.ni .no{flex:none;width:28px;height:28px;border-radius:8px;background:#eef2ee;color:var(--g700);font-weight:800;font-size:13.5px;display:flex;align-items:center;justify-content:center;transition:.25s}
+.ni:hover{background:#eef3ee;color:var(--g800)}
+.ni.on,.ni.on:hover{background:rgba(23,149,56,.9);color:#fff;font-weight:700;box-shadow:0 3px 10px rgba(23,149,56,.35)}
+.ni.on .no{background:rgba(255,255,255,.25);color:#fff}
+.ni.dim{opacity:.55}
+.nfoot{padding:14px 18px;border-top:1px solid var(--bd);font-size:13.5px;color:#9ca3af;line-height:2}
+/* ---------- 页面容器 ---------- */
+.page{position:absolute;left:270px;right:0;top:0;bottom:0;display:none;flex-direction:column;padding:38px 52px 54px}
+.page.on{display:flex}
+.page.full{left:0;padding:0}
+.z{position:relative;z-index:1}
+.wm{position:absolute;right:48px;bottom:52px;font-size:210px;line-height:1;font-weight:800;color:rgba(22,163,74,.06);z-index:0;pointer-events:none;font-family:Consolas,"Microsoft YaHei",monospace}
+.kick{display:inline-flex;align-items:center;gap:9px;font-size:14.5px;font-weight:700;letter-spacing:2px;color:var(--g700);background:var(--g50);border:1px solid var(--g100);padding:6px 18px;border-radius:999px;width:fit-content}
+.kick i{width:8px;height:8px;border-radius:50%;background:var(--g600)}
+.ht{font-size:42px;font-weight:800;color:var(--g800);border-left:7px solid var(--g600);padding-left:18px;margin-top:14px;line-height:1.3;white-space:nowrap}
+.lead{font-size:21px;line-height:1.85;color:#374151}
+.hl{color:var(--red);font-weight:700}
+.gh{color:var(--g800);font-weight:700}
+.pts{margin-top:16px;display:flex;flex-direction:column;gap:24px}
+.pt{display:flex;gap:13px;font-size:18.5px;line-height:2.0;color:#374151}
+.pt i{flex:none;width:27px;height:27px;margin-top:3px;border-radius:50%;background:var(--g100);color:var(--g700);font-size:14px;font-weight:800;display:flex;align-items:center;justify-content:center;font-style:normal}
+.tk{background:var(--goldbg);border-left:5px solid var(--gold);border-radius:12px;padding:16px 20px;font-size:19px;line-height:1.95;color:#78350f}
+.tk b{color:#92400e}
+.next{margin-top:13px;font-size:16.5px;color:var(--g700);font-weight:700}
+.note{font-size:13.5px;color:#9ca3af;line-height:1.7;margin-top:10px}
+/* 白色文本卡 + 版式骨架 */
+.phead{flex:none}
+.pbody{flex:1;min-height:0;display:flex;gap:30px;margin-top:20px}
+.pbody.keep{flex:none}
+.tcard{width:32%;min-width:0;flex:none;background:#fff;border:1px solid var(--bd);border-radius:18px;padding:30px 34px;box-shadow:0 2px 10px rgba(0,0,0,.05);display:flex;flex-direction:column}
+.tcard.wfull{width:100%}
+.tcard .pts.h{flex-direction:row;gap:16px;margin-top:14px}
+.tcard .pts.h .pt{flex:1;background:#f7faf8;border:1px solid var(--bd);border-radius:14px;padding:14px 16px;font-size:17px;line-height:1.7}
+.imgz{flex:1;min-width:0;display:flex;flex-direction:column}
+/* 图片区：图注跟图走，居中于图片正下方 */
+.slides{flex:1;min-height:0;display:flex;align-items:center;justify-content:center}
+.slide{display:none;width:100%;height:100%;flex-direction:column;gap:10px}
+.slide.on{display:flex}
+.swrap{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;gap:22px}
+.swrap img{max-width:100%;max-height:100%;border:1px solid var(--bd);border-radius:14px;background:#fff;box-shadow:0 4px 16px rgba(0,0,0,.08);cursor:zoom-in}
+.duo{display:flex;gap:22px;width:100%;height:100%;align-items:center;justify-content:center}
+.duo img{max-width:calc(50% - 11px);max-height:100%}
+.scap{text-align:center;font-size:16px;color:var(--mut);flex:none}
+.scap b{color:var(--g800);font-weight:700}
+.imgz.justl .swrap{justify-content:flex-start}
+.stack{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center;gap:8px}
+.stack img{flex:1;min-height:0;max-width:100%;object-fit:contain;border:1px solid var(--bd);border-radius:12px;background:#fff;box-shadow:0 3px 12px rgba(0,0,0,.07);cursor:zoom-in}
+.gbar{display:flex;align-items:center;justify-content:center;gap:16px;padding-top:12px;flex:none}
+.gbtn{width:44px;height:44px;border-radius:50%;border:1px solid var(--bd);background:#fff;color:var(--g800);font-size:19px;cursor:pointer;transition:.2s}
+.gbtn:hover{background:var(--g50);border-color:var(--g100)}
+.dots{display:flex;gap:10px}
+.dot{width:12px;height:12px;border-radius:50%;background:#d1d5db;transition:.3s;cursor:pointer}
+.dot.on{background:var(--g600);width:30px;border-radius:6px}
+.gcount{font-size:15px;color:var(--mut);min-width:52px;text-align:center}
+/* 原理页图示 */
+.flow{display:flex;align-items:stretch;margin-top:30px}
+.fn{flex:1;background:#fff;border:2px solid var(--g100);border-radius:16px;padding:18px 12px;text-align:center}
+.fn b{font-size:20px;color:var(--g800);display:block}
+.fn small{display:block;color:var(--mut);font-size:15px;margin-top:7px;line-height:1.5}
+.fn.hot{border-color:var(--gold);background:var(--goldbg)}
+.fn.hot b{color:#92400e}
+.arr{align-self:center;padding:0 12px;color:var(--g600);font-size:28px;font-weight:800}
+.roles{display:flex;gap:26px;margin-top:28px}
+.role{flex:1;border-radius:18px;padding:26px 30px;border:1px solid var(--bd);background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.05)}
+.role.us{border-top:6px solid var(--g600)}
+.role.ai{border-top:6px solid var(--gold)}
+.role h4{font-size:24px;color:var(--g800);display:flex;align-items:center;gap:10px}
+.role p{font-size:19px;color:#4b5563;line-height:1.9;margin-top:12px}
+/* 悬念页 */
+.qpage{align-items:stretch}
+.qmark{position:absolute;right:30px;top:-90px;font-size:460px;font-weight:800;color:rgba(22,163,74,.05);z-index:0;line-height:1}
+.qwrap{margin:auto;width:100%;max-width:1620px;text-align:center;position:relative;z-index:1;padding:0 50px}
+.qbig{font-size:64px;font-weight:800;color:var(--g900);line-height:1.6}
+.chips{display:flex;gap:26px;justify-content:center;margin-top:56px}
+.chip{background:#fff;border:1px solid var(--bd);border-radius:20px;padding:30px 34px;font-size:19px;color:#4b5563;text-align:left;box-shadow:0 3px 12px rgba(0,0,0,.06);min-width:430px;line-height:1.8}
+.chip b{display:block;color:var(--g800);font-size:23px;margin-bottom:10px}
+.bigpoint{margin-top:60px;font-size:34px;font-weight:800;color:var(--ink);line-height:1.75}
+/* 封面 / 结尾 */
+.cover{background:radial-gradient(1100px 600px at 88% -10%,rgba(22,163,74,.12),transparent 60%),radial-gradient(1000px 600px at -5% 112%,rgba(217,119,6,.10),transparent 55%),var(--bg)}
+.cin{margin:auto;text-align:center;position:relative;z-index:1;max-width:1700px}
+.cbadge{display:inline-flex;align-items:center;gap:10px;font-size:17px;font-weight:700;letter-spacing:3px;color:var(--g700);background:#fff;border:1px solid var(--g100);padding:9px 28px;border-radius:999px}
+.cbadge i{width:10px;height:10px;border-radius:50%;background:var(--gold)}
+.ct{font-size:112px;font-weight:800;color:var(--g900);margin-top:30px;letter-spacing:4px;line-height:1.22}
+.ct .qq{color:var(--g600)}
+.cs{font-size:46px;color:#374151;margin-top:24px;letter-spacing:2px}
+.chook{font-size:26px;color:var(--mut);margin-top:20px;letter-spacing:1px}
+.cline{width:130px;height:7px;border-radius:4px;background:linear-gradient(90deg,var(--g600),var(--gold));margin:40px auto 0}
+.cagenda{display:grid;grid-template-columns:repeat(7,1fr);gap:16px;margin-top:46px}
+.cag{background:rgba(255,255,255,.85);border:1px solid var(--bd);border-radius:18px;padding:24px 6px;text-align:center}
+.cag b{display:block;font-size:18px;color:var(--gold);letter-spacing:2px;font-family:Consolas,monospace}
+.cag span{font-size:21px;font-weight:700;color:var(--g800)}
+.cmeta{margin-top:52px;font-size:24px;color:var(--mut)}
+.cmeta b{color:var(--g800);font-size:27px}
+.eth{font-size:76px;font-weight:800;color:var(--g900);margin-top:34px;letter-spacing:3px}
+.es{font-size:27px;color:var(--mut);margin-top:30px;line-height:2}
+.es b{color:var(--g800)}
+/* 底部 */
+#track{position:absolute;left:0;right:0;bottom:0;height:6px;background:#e2e6e2;z-index:6;transition:opacity .4s}
+#fill{height:100%;width:0;background:linear-gradient(90deg,var(--g600),var(--g500));transition:width .35s}
+#pagenum{position:absolute;right:30px;bottom:16px;font-size:15px;color:var(--mut);z-index:6;transition:opacity .4s}
+#keyhint{position:absolute;left:290px;bottom:14px;font-size:14px;color:#9ca3af;z-index:6;transition:opacity .4s}
+/* 放大层 */
+#zoom{position:fixed;inset:0;background:rgba(15,23,42,.93);display:none;z-index:50;flex-direction:column}
+#zoom.on{display:flex}
+#zwrap{flex:1;overflow:auto;display:flex;align-items:center;justify-content:center;cursor:grab}
+#zwrap:active{cursor:grabbing}
+#zimg{max-width:97vw;max-height:95vh;border-radius:6px}
+#zoom.one #zimg{max-width:none;max-height:none}
+#zbar{display:flex;gap:12px;justify-content:center;padding:14px}
+.zbt{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:999px;padding:8px 22px;font-size:14px;cursor:pointer}
+.zbt:hover{background:rgba(255,255,255,.22)}
+/* 帮助层 */
+#help{position:fixed;inset:0;background:rgba(15,23,42,.55);display:none;z-index:60;align-items:center;justify-content:center}
+#help.on{display:flex}
+.hcard{background:#fff;border-radius:20px;padding:34px 42px;max-width:880px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.hcard h3{color:var(--g900);font-size:22px;margin-bottom:18px}
+.hrow{display:flex;gap:14px;align-items:baseline;font-size:15.5px;color:#374151;padding:6px 0;line-height:1.9}
+kbd{background:#f3f4f6;border:1px solid #d1d5db;border-bottom-width:3px;border-radius:6px;padding:1px 10px;font-size:13px;font-family:Consolas,monospace;color:#111827}
+.hpace{margin-top:16px;border-top:1px dashed var(--bd);padding-top:14px;font-size:15px;color:var(--mut);line-height:2.1}
+.hpace b{color:var(--g800)}
+/* 动效 */
+.page.on .rv{animation:rise .55s cubic-bezier(.2,.7,.3,1) both;animation-delay:var(--d,0s)}
+@keyframes rise{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
+</style>
+<style>.pbody.keep{flex:none}.tcard .pts:not(.h){flex:1;justify-content:space-evenly}</style><style>.imgz.framed{background:#fff;border:1px solid var(--bd);border-radius:18px;box-shadow:0 2px 10px rgba(0,0,0,.05);padding:16px 18px 12px}.imgz.framed .slides img{box-shadow:none}</style><style>
+#wmlayer{position:absolute;inset:0;z-index:40;pointer-events:none;background-repeat:repeat;background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='220'%3E%3Ctext x='150' y='110' transform='rotate(-22 150 110)' font-family='Microsoft YaHei' font-size='24' fill='%2314532d' fill-opacity='0.06' text-anchor='middle'%3E%E7%8E%8B%E5%86%89%E5%86%89%3C/text%3E%3C/svg%3E");transition:opacity .4s}
+#stage.navhide #wmlayer{opacity:0}
+#laser{position:fixed;width:28px;height:28px;border-radius:50%;background:radial-gradient(circle,rgba(255,60,60,.95) 0%,rgba(255,60,60,.5) 40%,rgba(255,0,0,0) 70%);box-shadow:0 0 16px 5px rgba(255,40,40,.5);pointer-events:none;display:none;z-index:80;transform:translate(-50%,-50%)}
+#laser.on{display:block}
+body.laserhide,body.laserhide *{cursor:none}
+</style></head>
+<body>
+<div id="stage">
+  <aside id="nav">
+    <div class="nhead"><span class="dot"></span><b>脱敏闭环与工具化落地</b><small>AI 财务数据分析 · 价值分享</small></div>
+    <div class="nlist">
+      <div class="ni" data-goto="p-cover" data-part="0"><span class="no">封面</span>开场</div>
+      <div class="ngrp">PART 1-7</div>
+      <div class="ni" data-goto="p1-1" data-part="1"><span class="no">1</span>安全边界</div>
+      <div class="ni" data-goto="p2-1" data-part="2"><span class="no">2</span>脱敏原理</div>
+      <div class="ni" data-goto="p3-1" data-part="3"><span class="no">3</span>脱敏闭环</div>
+      <div class="ni" data-goto="p4-1" data-part="4"><span class="no">4</span>工具化 BASIC</div>
+      <div class="ni" data-goto="p5-1" data-part="5"><span class="no">5</span>工具化 PLUS</div>
+      <div class="ni" data-goto="p6-1" data-part="6"><span class="no">6</span>冷思考</div>
+      <div class="ni" data-goto="p7" data-part="7"><span class="no">7</span>头脑风暴</div>
+      <div class="ni" data-goto="p-end" data-part="end"><span class="no">Q</span>结尾</div>
+      <div class="ngrp">附录 · 备查（按 A 进入）</div>
+      <div class="ni dim" data-goto="ax-1" data-part="ax"><span class="no">A1</span>反脱敏·风险检索</div>
+      <div class="ni dim" data-goto="ax-2" data-part="ax"><span class="no">A2</span>反脱敏·独立运行</div>
+      <div class="ni dim" data-goto="ax-3" data-part="ax"><span class="no">A3</span>反脱敏·投入使用</div>
+    </div>
+    <div class="nfoot">←/→ 切图或翻页 · ↑/↓ 翻页<br>点击图片放大 · H 帮助 · F 全屏</div>
+  </aside>
+
+  <!-- ===== 封面 ===== -->
+  <section class="page full cover on" id="p-cover" data-part="0">
+    <div class="wm" style="font-size:420px;right:60px;bottom:-50px">AI</div>
+    <div class="cin z">
+      <span class="cbadge rv"><i></i>价值成果分享</span>
+      <h1 class="ct rv" style="--d:.08s">从<span class="qq">"不敢喂"</span>到<span class="qq">"放心用"</span></h1>
+      <div class="cs rv" style="--d:.16s">AI 财务数据分析的脱敏闭环与工具化落地</div>
+      <div class="chook rv" style="--d:.24s">一套让敏感数据安全进入大模型、又能稳定产出经营分析报告的完整实践</div>
+      <div class="cline rv" style="--d:.3s"></div>
+      <div class="cagenda rv" style="--d:.36s">
+        <div class="cag"><b>01</b><span>安全边界</span></div>
+        <div class="cag"><b>02</b><span>脱敏原理</span></div>
+        <div class="cag"><b>03</b><span>脱敏闭环</span></div>
+        <div class="cag"><b>04</b><span>工具化 BASIC</span></div>
+        <div class="cag"><b>05</b><span>工具化 PLUS</span></div>
+        <div class="cag"><b>06</b><span>冷思考</span></div>
+        <div class="cag"><b>07</b><span>头脑风暴</span></div>
+      </div>
+      <div class="cmeta rv" style="--d:.44s">分享人：<b>王冉冉</b>　·　2026 年 10 月</div>
+    </div>
+  </section>
+
+  <!-- ===== PART 1 安全边界 ===== -->
+  <section class="page" id="p1-1" data-part="1">
+    <div class="wm">01</div>
+    <div class="phead z">
+      <span class="kick rv"><i></i>PART 1 · 安全边界</span>
+      <h2 class="ht rv" style="--d:.05s">数据发出去之前，先想清楚它会去哪</h2>
+    </div>
+    <p class="lead rv z" style="--d:.1s;margin-top:16px">用大模型的第一道门槛，不是会不会写提示词，而是搞清楚<span class="gh">数据的去向</span>：每一次调用，数据都会离开我们的电脑、经过网络、抵达厂商的服务器——链路上有谁、能看见什么，决定了我们"敢不敢喂"。</p>
+    <div class="pbody z">
+      <div class="tcard">
+        <div class="pts" style="margin-top:0">
+          <div class="pt rv" style="--d:.18s"><i>1</i><span><b>云上模型（最常用）</b>：DeepSeek、K3、Claude、OpenAI 系列可选面最全，按 token 计费、即接即用；但<span class="hl">数据需出域传输</span>，安全依赖厂商加密与合规体系。</span></div>
+          <div class="pt rv" style="--d:.24s"><i>2</i><span><b>本地部署</b>：数据不出内网、物理隔离、合规可控；但依赖服务器与显卡等固定资产投入，选型和更新靠自己跟进。</span></div>
+          <div class="pt rv" style="--d:.3s"><i>3</i><span><b>两条路线的本质</b>：用便利与能力换安全，还是用安全换门槛——这道选择题，是我们后面全部工作的起点。</span></div>
+        </div>
+        <div class="tk rv" style="--d:.36s;margin-top:18px"><b>本节结论：</b>想用最强的模型能力，数据往往就要出去。很多人<span class="hl">"不敢喂"</span>的顾虑，正是从这里来的。</div>
+        <div class="next rv" style="--d:.42s">下一页 → 数据在网络上的真实路径</div>
+      </div>
+      <div class="imgz z framed">
+        <div class="slides">
+          <div class="slide on">
+            <div class="swrap"><img src="assets/p1-infosec.png" alt="本地部署 vs 云上模型"></div>
+            <div class="scap"><b>截图</b>　本地部署 vs 云上模型：常用模型 · 成本 · 传输方式与信息安全性</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="page" id="p1-2" data-part="1">
+    <div class="wm">01</div>
+    <div class="phead z">
+      <span class="kick rv"><i></i>PART 1 · 安全边界</span>
+      <h2 class="ht rv" style="--d:.05s">同样的请求，两条不同的路</h2>
+    </div>
+    <p class="lead rv z" style="--d:.1s;margin-top:16px">HTTPS/TLS 决定传输过程是否加密，但<span class="gh">"加密"不等于"没人看见"</span>——中转站的存在，决定了有谁能看到明文。</p>
+    <div class="pbody z">
+      <div class="tcard">
+        <div class="pts" style="margin-top:0">
+          <div class="pt rv" style="--d:.18s"><i>1</i><span><b>官方直连</b>：一跳直达、链路最短。TLS 在厂商侧终止，数据按 DPA 约定处理，责任边界清晰。</span></div>
+          <div class="pt rv" style="--d:.24s"><i>2</i><span><b>经中转站</b>：两跳。中转服务器上 TLS 提前终止，<span class="hl">对话内容与 API Key 在这里明文可见</span>——多了一个不受我们控制的节点。</span></div>
+          <div class="pt rv" style="--d:.3s"><i>3</i><span><b>风险的实质</b>：不在"有没有加密"，而在"链路上多了几个能看明文的角色"。</span></div>
+        </div>
+        <div class="tk rv" style="--d:.36s;margin-top:18px"><b>划重点：</b>中转站用起来省事，代价是明文多暴露一站。对企业敏感数据而言，这一站就足够危险。</div>
+        <div class="next rv" style="--d:.42s">既要能力又要可控，本地部署行不行？下一页算一笔账 →</div>
+      </div>
+      <div class="imgz z framed">
+        <div class="slides">
+          <div class="slide on">
+            <div class="swrap"><img src="assets/p1-transport.png" alt="传输路径"></div>
+            <div class="scap"><b>截图</b>　官方直连 vs 经中转站：明文暴露在哪里</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="page" id="p1-3" data-part="1">
+    <div class="wm">01</div>
+    <div class="phead z">
+      <span class="kick rv"><i></i>PART 1 · 安全边界</span>
+      <h2 class="ht rv" style="--d:.05s">本地部署行不行？——算一笔现实的账</h2>
+    </div>
+    <div class="pbody z">
+      <div class="tcard">
+        <p class="lead rv" style="--d:.1s">理想很美好：数据不出内网，一切自己掌控。但现实很快给出另一个答案——<span class="gh">算力门槛</span>。</p>
+        <div class="pts">
+          <div class="pt rv" style="--d:.18s"><i>1</i><span><b>云端烧钱的体感</b>：同事沟通的原话——<span class="gh">"之前一个问题干了我 40 的额度"</span>。大模型按 token 计费，用起来确实烧得快。</span></div>
+          <div class="pt rv" style="--d:.24s"><i>2</i><span><b>自己部署的代价</b>：我们现有的算力是<span class="hl">16 张 H20，市价 160 万以上</span>，这还没算机房、电力与运维。</span></div>
+          <div class="pt rv" style="--d:.3s"><i>3</i><span><b>更现实的一层</b>：这些算力是<span class="gh">分摊到每个人</span>的公共资源，不可能为一张月度报表长期专用。</span></div>
+        </div>
+        <div class="tk rv" style="--d:.36s;margin-top:18px"><b>所以结论很清楚：</b>本地部署不现实，云上模型必须用。那就只剩一条路——<span class="hl">把喂出去的数据先变"安全"</span>。这正是接下来要讲的：脱敏。</div>
+      </div>
+      <div class="imgz z">
+        <div class="slides">
+          <div class="slide on">
+            <div class="swrap"><img src="assets/p1-local.png" alt="本地部署沟通"></div>
+            <div class="scap"><b>截图</b>　本地部署可行性沟通（真实对话）</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== PART 2 脱敏原理 ===== -->
+  <section class="page" id="p2-1" data-part="2">
+    <div class="wm">02</div>
+    <div class="phead z">
+      <span class="kick rv"><i></i>PART 2 · 脱敏原理</span>
+      <h2 class="ht rv" style="--d:.05s">先从一道熟悉的会计题说起</h2>
+    </div>
+    <p class="lead rv z" style="--d:.1s;margin-top:16px">非货币性资产交换：甲公司以 A00 铝锭，换乙公司的 1# 电解铜——判断商业实质、计算入账价值、编制分录，都是当年的"熟面孔"。做题时不知道大家有没有留意一个细节：</p>
+    <div class="pbody z">
+      <div class="tcard">
+        <div class="pts" style="margin-top:0">
+          <div class="pt rv" style="--d:.18s"><i>1</i><span>把"甲公司"换成"M 公司"、把"A00 铝锭"换成"M1 货物"，<span class="gh">这道题还做得出来吗？</span>——照样能做，一步都不会少。</span></div>
+          <div class="pt rv" style="--d:.24s"><i>2</i><span>因为题目真正考查的是<span class="gh">规律与逻辑</span>：公允价值、补价、增值税、入账价值的计算链条，跟标签叫什么毫无关系。</span></div>
+          <div class="pt rv" style="--d:.3s"><i>3</i><span>真实标签只对一类人有意义——<span class="hl">知道"密码本"、能把 M 公司还原回甲公司的人</span>。</span></div>
+        </div>
+        <div class="tk rv" style="--d:.36s;margin-top:18px"><b>顺着这个思路想：</b>我们的经营数据，能不能也这样"换标签"之后再发给 AI？——<span class="hl">保留规律，替换敏感名称</span>。</div>
+        <div class="next rv" style="--d:.42s">按 → 看这套思想的完整表述</div>
+      </div>
+      <div class="imgz z">
+        <div class="slides">
+          <div class="slide on">
+            <div class="swrap"><img src="assets/p2-case.png" alt="会计例题"></div>
+            <div class="scap"><b>截图</b>　会计例题：非货币性资产交换（甲公司 / 乙公司 / A00 铝锭 / 1# 电解铜）</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="page" id="p2-2" data-part="2">
+    <div class="wm">02</div>
+    <div class="phead z">
+      <span class="kick rv"><i></i>PART 2 · 脱敏原理</span>
+      <h2 class="ht rv" style="--d:.05s">脱敏的本质：我们出题，AI 做题</h2>
+    </div>
+    <div class="z" style="flex:1;min-height:0;display:flex;flex-direction:column;justify-content:space-evenly;margin-top:8px">
+      <p class="lead rv" style="--d:.1s">把"换标签"的思想平移到数据上：<span class="gh">在保留规律性的同时替换敏感信息</span>，一份真实的经营数据，就变成了一道出给 AI 的"加密题"。</p>
+      <div class="roles">
+        <div class="role us rv" style="--d:.18s"><h4>✍ 出题人 · 我们</h4><p>掌握真实标签与"密码本"；负责把敏感的编码、名称<span class="gh">替换成规律化的代号</span>，拿到结果后再负责反脱敏还原。数据从头到尾不出我们自己的电脑。</p></div>
+        <div class="role ai rv" style="--d:.24s"><h4>🤖 做题人 · AI</h4><p>只看到替换后的"加密题"；依据数据的规律与业务逻辑进行计算与分析——<span class="gh">它可以做对每一道题，却始终不知道标签背后是谁</span>。</p></div>
+      </div>
+      <div class="flow rv" style="--d:.3s">
+        <div class="fn"><b>原始数据</b><small>真实编码 + 名称</small></div><div class="arr">→</div>
+        <div class="fn hot"><b>标签替换 1:1</b><small>本地方案 · 离线运行</small></div><div class="arr">→</div>
+        <div class="fn"><b>加密数据</b><small>规律保留 · 敏感消失</small></div><div class="arr">→</div>
+        <div class="fn"><b>AI 分析计算</b><small>按规律解题</small></div><div class="arr">→</div>
+        <div class="fn hot"><b>反脱敏还原</b><small>对照密码本 1:1</small></div><div class="arr">→</div>
+        <div class="fn"><b>真实结论</b><small>只有我们知道含义</small></div>
+      </div>
+      <div style="text-align:center">
+        <div class="bigpoint rv" style="--d:.36s;margin-top:0">数据和结果对 <span class="hl">AI 无效</span>，对知道真实标签的<span class="hl">我们有效</span></div>
+        <div class="next rv" style="--d:.42s;margin-top:16px">这个思想如何落到我们自己的数据上？进入 PART 3 →</div>
+      </div>
+    </div>
+  </section>
+  <!-- ===== PART 3 脱敏闭环 ===== -->
+  <section class="page" id="p3-1" data-part="3">
+    <div class="wm">03</div>
+    <div class="phead z">
+      <span class="kick rv"><i></i>PART 3 · 脱敏闭环</span>
+      <h2 class="ht rv" style="--d:.05s">先认识我们的数据：编码 + 名称，层层有规律</h2>
+    </div>
+    <div class="pbody keep z">
+      <div class="tcard wfull">
+        <p class="lead rv" style="--d:.1s">脱敏要落地，得先看清脱敏对象长什么样。我们的数据有两个鲜明特点：<span class="gh">组织维度层层编码</span>——事业部、大区、省区、城市经营部，一级级编下来；<span class="gh">业务标签成对出现</span>——工程项目、客户、产品大/中/小类，几乎每个敏感名称旁边都跟着一个有规律的编码。</p>
+        <div class="tk rv" style="--d:.18s;margin-top:14px"><b>关键洞察：</b>编码是数字和字母的组合，规律性强——<span class="hl">有规律，就可替换；可替换，就能写成程序批量处理</span>。我们不需要逐格手工改，只需要一张"密码本"和一段脚本。</div>
+      </div>
+    </div>
+    <div class="z stack" style="margin-top:16px">
+      <img class="rv" style="--d:.24s" src="assets/p3-arch.png" alt="架构层级">
+      <div class="scap rv" style="--d:.28s"><b>截图 1</b>　组织架构层级：事业部 → 大区 → 省区 → 城市经营部，编码 + 名称</div>
+      <img class="rv" style="--d:.32s" src="assets/p3-tags.png" alt="各类标签">
+      <div class="scap rv" style="--d:.36s"><b>截图 2</b>　各类业务标签：工程项目 / 客户 / 产品大中小类，全部"编码+名称"成对出现</div>
+    </div>
+  </section>
+
+  <section class="page" id="p3-2" data-part="3">
+    <div class="wm">03</div>
+    <div class="phead z">
+      <span class="kick rv"><i></i>PART 3 · 脱敏闭环</span>
+      <h2 class="ht rv" style="--d:.05s">第一步：让 AI 写"脱敏脚本"</h2>
+    </div>
+    <p class="lead rv z" style="--d:.1s;margin-top:16px">整个过程<span class="gh">不需要懂代码</span>——把需求用大白话讲清楚，代码由 AI 写，我们要做的只是"一键运行"。</p>
+    <div class="pbody z">
+      <div class="tcard">
+        <div class="pts" style="margin-top:0">
+          <div class="pt rv" style="--d:.18s"><i>1</i><span>脚本按<b>列名</b>识别需要脱敏的字段，用正则匹配执行替换，未匹配的列原样保留——规则清晰、行为可控。</span></div>
+          <div class="pt rv" style="--d:.24s"><i>2</i><span>全程 <span class="gh">1:1 替换</span>：一个真实标签只对应一个代号，这是日后能够"还原"的前提。</span></div>
+          <div class="pt rv" style="--d:.3s"><i>3</i><span>特别重要的一步：<span class="hl">先不用真的"密码本"</span>——先用假的让 AI 写测试代码，手工运行确认不报错，再离线换回真的。</span></div>
+          <div class="pt rv" style="--d:.36s"><i>4</i><span>换好之后，脚本<span class="hl">可脱离 AI、脱离网络独立运行</span>：脱敏在自己电脑上完成，结果不经过任何第三方。</span></div>
+        </div>
+        <div class="tk rv" style="--d:.42s;margin-top:18px"><b>一句话总结：</b>脱敏这件事，AI 只出力，<span class="hl">不碰真数据</span>。</div>
+      </div>
+      <div class="imgz z">
+        <div class="slides">
+          <div class="slide on">
+            <div class="swrap"><img src="assets/p3-mask.png" alt="加密代码"></div>
+            <div class="scap"><b>截图</b>　excel_masking 脱敏脚本（一键运行）</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="page" id="p3-3" data-part="3">
+    <div class="wm">03</div>
+    <div class="phead z">
+      <span class="kick rv"><i></i>PART 3 · 脱敏闭环</span>
+      <h2 class="ht rv" style="--d:.05s">第二步：反脱敏——测试先行，别让"解密"翻车</h2>
+    </div>
+    <p class="lead rv z" style="--d:.1s;margin-top:16px">能加密，就要能还原。反脱敏脚本同样交给 AI 来写，但发给 AI 之前，<span class="gh">先把"密码本"换成假的</span>——让 AI 在假数据上，把问题全部暴露出来。</p>
+    <div class="pbody z">
+      <div class="tcard">
+        <div class="pts" style="margin-top:0">
+          <div class="pt rv" style="--d:.18s"><i>1</i><span>先让 AI 检索"反脱敏可能出现的问题"，果然抓出最致命的坑：<span class="hl">编码前缀存在包含关系，逐个 replace 会发生链式误替换</span>。</span></div>
+          <div class="pt rv" style="--d:.24s"><i>2</i><span>类似隐患还有：颜色值等样式代码里也可能藏着编码，裸替换会把报告"染"花——方案沟通确认后，AI 才开始写代码。</span></div>
+          <div class="pt rv" style="--d:.3s"><i>3</i><span>全部确认之后，才<span class="hl">离线把假的密码本换成真的</span>，正式运行。</span></div>
+        </div>
+        <div class="tk rv" style="--d:.36s;margin-top:18px"><b>原则只有一条：</b>真数据永远不过 AI 的手——<span class="hl">AI 拿到的永远是假的</span>，真的只在我们自己的电脑上跑。</div>
+      </div>
+      <div class="imgz z">
+        <div class="slides">
+          <div class="slide on">
+            <div class="swrap"><img src="assets/p3-demask.png" alt="反脱敏代码"></div>
+            <div class="scap"><b>截图</b>　反脱敏：先用假"密码本"做风险检索与方案确认</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="page" id="p3-4" data-part="3">
+    <div class="wm">03</div>
+    <div class="phead z">
+      <span class="kick rv"><i></i>PART 3 · 脱敏闭环</span>
+      <h2 class="ht rv" style="--d:.05s">第三步：独立运行——一次跑通，结果完全一致</h2>
+    </div>
+    <p class="lead rv z" style="--d:.1s;margin-top:16px">最后，要求 AI 把脚本改到<span class="gh">"可以独立运行"</span>：不依赖任何对话上下文，任何人在自己的电脑上都能跑。</p>
+    <div class="pbody z">
+      <div class="tcard">
+        <div class="pts" style="margin-top:0">
+          <div class="pt rv" style="--d:.18s"><i>1</i><span>换任何配置表都自动生效，<span class="gh">零人工判断</span>——规则内化在脚本里，而不是"问一句、改一句"。</span></div>
+          <div class="pt rv" style="--d:.24s"><i>2</i><span>本地独立实测：<span class="hl">42 处替换、0 争议、3 个未命中</span>，与此前人工核对的结果完全一致。</span></div>
+          <div class="pt rv" style="--d:.3s"><i>3</i><span>脚本固化到本地目录，成为<span class="gh">可复用的工具</span>，而不是一段一次性的对话——这是"对话"与"工具"的分水岭。</span></div>
+        </div>
+        <div class="tk rv" style="--d:.36s;margin-top:18px"><b>至此：</b>脱敏 → 发给 AI → 反脱敏还原，全链路闭环，<span class="hl">"不敢喂"变成了"放心喂"</span>。</div>
+        <div class="next rv" style="--d:.42s">但是——放心喂了，就够了吗？→ PART 4</div>
+      </div>
+      <div class="imgz z">
+        <div class="slides">
+          <div class="slide on">
+            <div class="swrap"><img src="assets/p3-run.png" alt="反脱敏独立运行"></div>
+            <div class="scap"><b>截图</b>　反脱敏脚本独立运行验证（42 处替换 · 0 争议）</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== PART 4 工具化 BASIC ===== -->
+  <section class="page qpage" id="p4-1" data-part="4">
+    <div class="qmark">?</div>
+    <div class="qwrap z">
+      <span class="kick rv"><i></i>PART 4 · 工具化 BASIC</span>
+      <div class="qbig rv" style="--d:.1s;margin-top:34px">数据脱敏了，然后呢？<br>直接发给 AI，让它出报告？</div>
+      <div class="chips">
+        <div class="chip rv" style="--d:.2s"><b>数据体量</b>动辄几万行、若干个 Sheet，一个对话窗口根本装不下</div>
+        <div class="chip rv" style="--d:.3s"><b>上下文不足</b>硬塞给 AI 直接算，算到一半就"断片"，口径错、数字错</div>
+        <div class="chip rv" style="--d:.4s"><b>Token 烧钱</b>每次都从头喂全量数据，成本蹭蹭往上走</div>
+      </div>
+      <div class="bigpoint rv" style="--d:.5s">我们做到了<span class="hl">放心喂</span>，但还没做到<span class="hl">用着不烧心</span></div>
+    </div>
+  </section>
+
+  <section class="page" id="p4-2" data-part="4">
+    <div class="wm">04</div>
+    <div class="phead z">
+      <span class="kick rv"><i></i>PART 4 · 工具化 BASIC</span>
+      <h2 class="ht rv" style="--d:.05s">BASIC 版：把"一次对话"升级成"一套流程"</h2>
+    </div>
+    <div class="pbody keep z">
+      <div class="tcard wfull">
+        <p class="lead rv" style="--d:.1s">解决思路不是换更强的模型，而是<span class="gh">改工作方式</span>：把月度报告拆成三个稳定环节，每一环都有明确的输入、执行与产出——人工闭环，口径与经验逐月沉淀。</p>
+        <div class="pts h">
+          <div class="pt rv" style="--d:.18s"><i>1</i><span><b>提供数据</b>　本月数据 + 口径要求直接进入执行；换月动作全程人工、逐处核对后再进入执行。</span></div>
+          <div class="pt rv" style="--d:.26s"><i>2</i><span><b>执行报告生成</b>　读取知识库 L1-L4 对齐口径 → 检查 data.xlsx 与配置 → 跑脚本生成 HTML 报告。</span></div>
+          <div class="pt rv" style="--d:.34s"><i>3</i><span><b>归因确认与知识修正</b>　数字与业务直觉互相核对，确认后把新知识写回 L1-L4，<span class="hl">知识库随使用持续生长</span>。</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="imgz z" style="flex:1;min-height:0;margin-top:18px">
+      <div class="slides">
+        <div class="slide on">
+          <div class="swrap"><img src="assets/p4-basic.png" alt="工具化basic"></div>
+          <div class="scap"><b>图示</b>　大区月度经营分析 AI 工具化 · BASIC 全景</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="page" id="p4-3" data-part="4">
+    <div class="wm">04</div>
+    <div class="phead z">
+      <span class="kick rv"><i></i>PART 4 · 工具化 BASIC</span>
+      <h2 class="ht rv" style="--d:.05s">成果：AI 生成的月度经营分析报告</h2>
+    </div>
+    <div class="pbody keep z">
+      <div class="tcard wfull">
+        <p class="lead rv" style="--d:.1s"><span class="gh">结论先行、口径统一、图表齐全。</span>这里的原则是：数字由脚本确定性计算，观点由 AI 按知识库口径撰写，人工做终审——既美观，又经得起推敲。请用左右键翻看四张样张。</p>
+      </div>
+    </div>
+    <div class="imgz z" style="flex:1;min-height:0;margin-top:18px">
+      <div class="slides">
+        <div class="slide on">
+          <div class="swrap"><img src="assets/p4-r1.png" alt="报告样式1"></div>
+          <div class="scap"><b>样张 1</b>　核心发现摘要 + 经营概况 KPI 总览（结论先行）</div>
+        </div>
+        <div class="slide">
+          <div class="swrap"><img src="assets/p4-r2.png" alt="报告样式2"></div>
+          <div class="scap"><b>样张 2</b>　利润预实差异分析 · 因素分解瀑布</div>
+        </div>
+        <div class="slide">
+          <div class="swrap"><img src="assets/p4-r3.png" alt="报告样式3"></div>
+          <div class="scap"><b>样张 3</b>　大区 / 大类毛利率六因素瀑布</div>
+        </div>
+        <div class="slide">
+          <div class="swrap"><img src="assets/p4-r4.png" alt="报告样式4"></div>
+          <div class="scap"><b>样张 4</b>　全年预测与达成率测算表</div>
+        </div>
+      </div>
+      <div class="gbar"><button class="gbtn" data-dir="-1">‹</button><div class="dots"></div><button class="gbtn" data-dir="1">›</button><span class="gcount">1/4</span></div>
+    </div>
+  </section>
+  <!-- ===== PART 5 工具化 PLUS ===== -->
+  <section class="page" id="p5-1" data-part="5">
+    <div class="wm">05</div>
+    <div class="phead z">
+      <span class="kick rv"><i></i>PART 5 · 工具化 PLUS</span>
+      <h2 class="ht rv" style="--d:.05s">PLUS 版：把"怎么用、怎么改"也管起来</h2>
+    </div>
+    <div class="pbody keep z">
+      <div class="tcard wfull">
+        <p class="lead rv" style="--d:.1s">BASIC 跑通了"生成"，但工具要长期用下去，还得解决<span class="gh">迭代与协作</span>的问题。PLUS 版的三个关键改动：</p>
+        <div class="pts h">
+          <div class="pt rv" style="--d:.18s"><i>1</i><span><b>新增环节一 · 前置交互</b>　动手之前先问两件事：口径/知识有没有变化？要不要动分析代码？<span class="hl">避免白跑一轮</span>。</span></div>
+          <div class="pt rv" style="--d:.26s"><i>2</i><span><b>写入日志</b>　知识库、代码、SKILL 的每一次修改都留痕——<span class="hl">可追溯、可回滚、可审计</span>。</span></div>
+          <div class="pt rv" style="--d:.34s"><i>3</i><span><b>修改代码指引</b>　建立知识条目 ↔ 文件+行号的映射，改知识必须联动改代码，<span class="hl">禁止"只改知识、不改代码"</span>。</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="imgz z" style="flex:1;min-height:0;margin-top:18px">
+      <div class="slides">
+        <div class="slide on">
+          <div class="swrap"><img src="assets/p5-plus.jpg" alt="工具化plus"></div>
+          <div class="scap"><b>图示</b>　全流程 PLUS：前置交互 / 执行生成 / 交付反馈 + 反馈闭环 + 写入日志</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="page" id="p5-2" data-part="5">
+    <div class="wm">05</div>
+    <div class="phead z">
+      <span class="kick rv"><i></i>PART 5 · 工具化 PLUS</span>
+      <h2 class="ht rv" style="--d:.05s">落地痕迹：日志与指引长什么样</h2>
+    </div>
+    <div class="pbody keep z">
+      <div class="tcard wfull">
+        <p class="lead rv" style="--d:.1s">上面三条改动不是概念，都留下了真实的落地痕迹——<span class="gh">每一处改动都有出处</span>。</p>
+        <div class="pts h">
+          <div class="pt rv" style="--d:.18s"><i>1</i><span><b>Skill 写入日志</b>　SKILL.md 从 V6 到 V9 定稿的每一步都记录在案：硬约束修正、规则联动检查、先读指引定位代码、Phase 0 前置交互。</span></div>
+          <div class="pt rv" style="--d:.26s"><i>2</i><span><b>使用说明</b>　仅涉及核算类知识库修改时读取；<span class="gh">日常跑报告不读取，减少 token 消耗</span>——知识文件也讲究"按需加载"。</span></div>
+          <div class="pt rv" style="--d:.34s"><i>3</i><span><b>L2 指标工厂</b>　每个指标对应核算公式、脚本与行号，AI 按图索骥、改有所据。</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="imgz z" style="flex:1;min-height:0;margin-top:18px">
+      <div class="slides">
+        <div class="slide on">
+          <div class="swrap"><img src="assets/p5-skill.png" alt="skill修改写入日志"></div>
+          <div class="scap"><b>截图 1</b>　Skill 写入日志：每次修改留痕（超宽表，点击可放大细看）</div>
+        </div>
+        <div class="slide">
+          <div class="swrap duo"><img src="assets/p5-g1.png" alt="代码修改指引1"><img src="assets/p5-g2.png" alt="代码修改指引2"></div>
+          <div class="scap"><b>截图 2</b>　修改代码指引：使用说明 / 配置中枢 / L1 数据字典（左） · L2 指标工厂（右）</div>
+        </div>
+      </div>
+      <div class="gbar"><button class="gbtn" data-dir="-1">‹</button><div class="dots"></div><button class="gbtn" data-dir="1">›</button><span class="gcount">1/2</span></div>
+    </div>
+  </section>
+
+  <!-- ===== PART 6 冷思考 ===== -->
+  <section class="page qpage" id="p6-1" data-part="6">
+    <div class="qmark">?</div>
+    <div class="qwrap z">
+      <span class="kick rv"><i></i>PART 6 · 冷思考</span>
+      <div class="qbig rv" style="--d:.1s;margin-top:34px">还能怎么升级？要不要来个 Pro 版？</div>
+      <div class="chips">
+        <div class="chip rv" style="--d:.2s"><b>形式创新</b>Skill 换成 Agent？听起来更智能</div>
+        <div class="chip rv" style="--d:.3s"><b>极致美感</b>更炫的前端渲染、更漂亮的版式？</div>
+        <div class="chip rv" style="--d:.4s"><b>然后呢？</b>报告更好看了，分析更准了吗？</div>
+      </div>
+      <div class="bigpoint rv" style="--d:.5s">这些方向<span class="gh">有价值</span>，但在当前迭代里<span class="hl">缺乏性价比</span>——<br>AI 生成"美观又像模像样"的报告非常容易，<span class="hl">token 要花在刀刃上</span></div>
+    </div>
+  </section>
+
+  <section class="page" id="p6-2" data-part="6">
+    <div class="wm">06</div>
+    <div class="phead z">
+      <span class="kick rv"><i></i>PART 6 · 冷思考</span>
+      <h2 class="ht rv" style="--d:.05s">他山之石：可信推理是一套工程能力</h2>
+    </div>
+    <p class="lead rv z" style="--d:.1s;margin-top:16px">方向对不对，可以借外部研究来校准。陈亚盛教授关于"企业级财务 AI 可信推理"的论述，有两点与我们高度共鸣：</p>
+    <div class="pbody z">
+      <div class="tcard">
+        <div class="pts" style="margin-top:0">
+          <div class="pt rv" style="--d:.18s"><i>1</i><span><span class="gh">可信推理的本质是一整套工程化能力，而非单纯的模型能力</span>：依据明确、对象清楚、过程可追溯、动作受控——这也解释了我们的闭环为什么要<span class="gh">把规则、日志、复核做进流程</span>。</span></div>
+          <div class="pt rv" style="--d:.26s"><i>2</i><span><span class="gh">知识需要持续沉淀</span>：高频口径沉淀成知识页，先读知识、再回原始证据，避免每次从零推理——我们的知识库正在做同样的事。</span></div>
+          <div class="pt rv" style="--d:.34s"><i>3</i><span>一个类比：早上闹钟响了起不来，是闹钟订少了吗？订十个八个就能起来吗？——销量上不来、应收下不去，<span class="hl">把考核难度狠狠加上去，同样不是答案</span>。真正起作用的，是让执行者真正<span class="hl">"懂"</span>这件事。对 AI，也是一样。</span></div>
+        </div>
+        <div class="tk rv" style="--d:.4s;margin-top:18px"><b>所以：</b>要让 AI 懂我们的业务模型。这类积累进度缓慢，除非开始<span class="hl">系统性地沉淀、蒸馏集体的智慧</span>。→ PART 7</div>
+        <div class="note rv" style="--d:.44s">观点摘编自《企业级财务 AI 如何实现可信推理》，陈亚盛（厦门大学会计系教授、博士生导师），原载微信公众号「高顿咨询」；观点归属原作者，仅作学习交流。</div>
+      </div>
+      <div class="imgz z">
+        <div class="slides">
+          <div class="slide on">
+            <div class="swrap"><img src="assets/p6-trust.jpg" alt="可信推理"></div>
+            <div class="scap"><b>学习笔记</b>　企业级财务 AI：可信推理的核心框架与关键技术</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== PART 7 头脑风暴 ===== -->
+  <section class="page" id="p7" data-part="7">
+    <div class="wm">07</div>
+    <div class="phead z">
+      <span class="kick rv"><i></i>PART 7 · 头脑风暴</span>
+      <h2 class="ht rv" style="--d:.05s">下一步：让 AI 懂我们的业务</h2>
+    </div>
+    <div class="pbody keep z">
+      <div class="tcard wfull">
+        <p class="lead rv" style="--d:.1s">让 AI 真正"懂业务"，业界常见的是小模型（SLM）落地知识管理的三条路径——好消息是，<span class="gh">我们已经在第一条上跑起来了</span>。</p>
+        <div class="pts h">
+          <div class="pt rv" style="--d:.18s"><i>1</i><span><b>人在回路持续迭代</b>　上手最快、成本最低；模型给结果、人来检验修正，知识库随使用生长——现在的闭环正是这条路。</span></div>
+          <div class="pt rv" style="--d:.26s"><i>2</i><span><b>领域微调</b>　以通用小模型为基座做领域训练，能力内化、可私有化部署在内网，适合任务固定的财务 BP 专属助手。</span></div>
+          <div class="pt rv" style="--d:.34s"><i>3</i><span><b>蒸馏</b>　由大模型对业务问题逐条给出高质量答案形成"教材"，小模型学会后承担日常任务，效果上限最高。</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="imgz z" style="flex:1;min-height:0;margin-top:18px">
+      <div class="slides">
+        <div class="slide on">
+          <div class="swrap"><img src="assets/p7-brain.png" alt="头脑风暴"></div>
+          <div class="scap"><b>图示</b>　头脑风暴：SLM 落地知识管理三条路径（做法 · 优缺点 · 成本 · 适用场景）</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 结尾 ===== -->
+  <section class="page full cover" id="p-end" data-part="end">
+    <div class="wm" style="font-size:420px;right:60px;bottom:-50px">Q&amp;A</div>
+    <div class="cin z">
+      <span class="cbadge rv"><i></i>谢谢聆听</span>
+      <div class="eth rv" style="--d:.1s">欢迎交流 · Q&amp;A</div>
+      <div class="cline rv" style="--d:.2s"></div>
+      <div class="es rv" style="--d:.3s">从<b>"不敢喂"</b>到<b>"放心用"</b>，靠的是一个可复现的闭环，<br>而不是一次惊艳的演示。</div>
+      <div class="cmeta rv" style="--d:.4s">王冉冉 · 2026 年 10 月</div>
+    </div>
+  </section>
+
+  <!-- ===== 附录（备查） ===== -->
+  <section class="page" id="ax-1" data-part="ax">
+    <div class="phead z">
+      <span class="kick rv" style="border-color:#fde68a;background:#fffbeb;color:#92400e"><i style="background:var(--gold)"></i>附录 A1 · 备查</span>
+      <h2 class="ht rv" style="--d:.05s">反脱敏：AI 风险检索全过程</h2>
+    </div>
+    <p class="lead rv z" style="--d:.1s;margin-top:16px">备查材料：AI 检索出的替换风险与三类规避方案——整串精确匹配、JSON 结构化替换、样式段整体跳过。</p>
+    <div class="pbody z">
+      <div class="tcard">
+        <div class="tk rv" style="--d:.2s;margin-top:0"><b>要点：</b>先检索、再确认方案、最后写代码——<span class="hl">沟通确认的环节不可省</span>。</div>
+      </div>
+      <div class="imgz z">
+        <div class="slides">
+          <div class="slide on">
+            <div class="swrap"><img src="assets/ax-1.png" alt="反脱敏交互"></div>
+            <div class="scap"><b>截图</b>　反脱敏交互：问题全盘检索与方案设计</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="page" id="ax-2" data-part="ax">
+    <div class="phead z">
+      <span class="kick rv" style="border-color:#fde68a;background:#fffbeb;color:#92400e"><i style="background:var(--gold)"></i>附录 A2 · 备查</span>
+      <h2 class="ht rv" style="--d:.05s">反脱敏：改到可独立运行</h2>
+    </div>
+    <p class="lead rv z" style="--d:.1s;margin-top:16px">备查材料：从"依赖对话上下文"到"独立 AI 自行运行"的最后一轮修改。</p>
+    <div class="pbody z">
+      <div class="tcard">
+        <div class="tk rv" style="--d:.2s;margin-top:0"><b>要点：</b>拼成单个正则一次扫描，换任何配置表自动生效，<span class="hl">零人工判断</span>。</div>
+      </div>
+      <div class="imgz z">
+        <div class="slides">
+          <div class="slide on">
+            <div class="swrap"><img src="assets/ax-2.png" alt="反脱敏交互2"></div>
+            <div class="scap"><b>截图</b>　反脱敏交互：独立运行要求与验证</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="page" id="ax-3" data-part="ax">
+    <div class="phead z">
+      <span class="kick rv" style="border-color:#fde68a;background:#fffbeb;color:#92400e"><i style="background:var(--gold)"></i>附录 A3 · 备查</span>
+      <h2 class="ht rv" style="--d:.05s">反脱敏：投入实际使用</h2>
+    </div>
+    <div class="pbody keep z">
+      <div class="tcard wfull">
+        <p class="lead rv" style="--d:.1s">备查材料：生产环境中批量生成、反脱敏后的月度分析报告与配套脚本——<span class="hl">不是演示品，是每个月真的在跑的流程</span>。</p>
+      </div>
+    </div>
+    <div class="imgz z justl" style="flex:1;min-height:0;margin-top:18px">
+      <div class="slides">
+        <div class="slide on">
+          <div class="swrap"><img src="assets/ax-3.png" alt="反脱敏投入使用"></div>
+          <div class="scap"><b>截图</b>　反脱敏后的报告文件与脚本（生产目录）</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div id="wmlayer"></div><div id="track"><div id="fill"></div></div>
+  <div id="pagenum">1 / 22</div>
+  <div id="keyhint">单击 翻页（Shift+单击 后退）　·　双击图片放大　·　右键 激光点　·　H 帮助　·　F 全屏</div>
+</div>
+
+<div id="laser"></div><div id="zoom">
+  <div id="zwrap"><img id="zimg" src="" alt=""></div>
+  <div id="zbar"><button class="zbt" id="zmode">1:1 原始大小</button><button class="zbt" id="zclose">关闭（Esc）</button></div>
+</div>
+<div id="help">
+  <div class="hcard">
+    <h3>操作说明</h3>
+    <div class="hrow"><kbd>→</kbd><kbd>←</kbd><span>优先切换当前页图片，切完再按即翻到下一页 / 上一页</span></div>
+    <div class="hrow"><kbd>↑</kbd><kbd>↓</kbd><kbd>Space</kbd><kbd>PgUp</kbd><kbd>PgDn</kbd><span>直接翻页</span></div>
+    <div class="hrow"><kbd>单击</kbd><span>翻到下一页（Shift+单击 上一页）；翻页笔/激光笔的 PgUp·PgDn 全局有效</span></div>
+    <div class="hrow"><kbd>双击图片</kbd><span>放大查看；切到 <kbd>1:1</kbd> 可看原始大小，按住拖动平移</span></div>
+    <div class="hrow"><kbd>右键</kbd><span>红色激光点 开/关（跟随鼠标，再按右键或 Esc 关闭）</span></div>
+    <div class="hrow"><kbd>A</kbd><span>进入附录（反脱敏备查材料）；<kbd>Home</kbd>/<kbd>End</kbd> 回封面 / 结尾</span></div>
+    <div class="hrow"><kbd>F</kbd><span>全屏投影　·　<kbd>H</kbd> 或 <kbd>?</kbd> 打开本说明　·　<kbd>Esc</kbd> 关闭弹层</span></div>
+    <div class="hpace"><b>建议节奏（全场约 10 分钟）</b>　安全边界 1.5′ · 脱敏原理 1.2′ · 脱敏闭环 2.5′ · BASIC+成果 2′ · PLUS 1.3′ · 冷思考 1.2′ · 头脑风暴 0.4′</div>
+  </div>
+</div>
+<script>
+(function(){
+var stage=document.getElementById('stage');
+var pages=Array.prototype.slice.call(document.querySelectorAll('.page'));
+var navlis=Array.prototype.slice.call(document.querySelectorAll('.ni'));
+var fill=document.getElementById('fill');
+var pagenum=document.getElementById('pagenum');
+var zoom=document.getElementById('zoom');
+var zwrap=document.getElementById('zwrap');
+var zimg=document.getElementById('zimg');
+var zmode=document.getElementById('zmode');
+var zclose=document.getElementById('zclose');
+var help=document.getElementById('help');
+var idxMap={}; pages.forEach(function(p,i){idxMap[p.id]=i;});
+var endMain=idxMap['p-end'];
+var cur=0;
+var gals={};
+pages.forEach(function(p,pi){
+ var slides=p.querySelectorAll('.slides .slide');
+ var dots=p.querySelector('.dots');
+ if(!slides.length||!dots||slides.length<2) return;
+ var arr={slides:Array.prototype.slice.call(slides),idx:0,dots:dots,count:p.querySelector('.gcount')};
+ arr.slides.forEach(function(im,ii){
+  var d=document.createElement('span'); d.className='dot'+(ii===0?' on':'');
+  d.addEventListener('click',function(){gTo(pi,ii);});
+  dots.appendChild(d);
+ });
+ gals[pi]=arr;
+});
+function gTo(pi,n){
+ var a=gals[pi]; if(!a||n<0||n>=a.slides.length) return;
+ a.idx=n;
+ a.slides.forEach(function(im,ii){im.classList.toggle('on',ii===n);});
+ Array.prototype.forEach.call(a.dots.children,function(d,ii){d.classList.toggle('on',ii===n);});
+ if(a.count) a.count.textContent=(a.idx+1)+'/'+a.slides.length;
+}
+function show(i){
+ pages[cur].classList.remove('on');
+ cur=i; pages[cur].classList.add('on');
+ var part=pages[cur].getAttribute('data-part');
+ navlis.forEach(function(li){li.classList.toggle('on',li.getAttribute('data-part')===part);});
+ stage.classList.toggle('navhide',part==='0'||part==='end');
+ fill.style.width=((cur+1)/pages.length*100)+'%';
+ pagenum.textContent=(cur+1)+' / '+pages.length;
+ try{history.replaceState(null,'','#'+pages[cur].id);}catch(ex){}
+
+}
+function go(i){ if(i<0||i>=pages.length) return; show(i); }
+function next(){
+ var a=gals[cur];
+ if(a&&a.idx<a.slides.length-1){gTo(cur,a.idx+1);return;}
+ if(cur<pages.length-1&&cur!==endMain) go(cur+1);
+}
+function prev(){
+ var a=gals[cur];
+ if(a&&a.idx>0){gTo(cur,a.idx-1);return;}
+ if(cur>0) go(cur-1);
+}
+function fit(){
+ var s=Math.min(window.innerWidth/1920,window.innerHeight/1080);
+ stage.style.transform='translate(-50%,-50%) scale('+s+')';
+}
+window.addEventListener('resize',fit); fit();
+function openZoom(src){ zimg.src=src; zoom.classList.remove('one'); zimg.style.maxWidth=''; zimg.style.maxHeight=''; zmode.textContent='1:1 原始大小'; zoom.classList.add('on'); }
+function closeZoom(){ zoom.classList.remove('on'); zimg.src=''; }
+zmode.addEventListener('click',function(){
+ var one=zoom.classList.toggle('one');
+ zmode.textContent=one?'适应窗口':'1:1 原始大小';
+ if(one){ zimg.style.maxWidth='none'; zimg.style.maxHeight='none'; } else { zimg.style.maxWidth=''; zimg.style.maxHeight=''; }
+});
+zclose.addEventListener('click',closeZoom);
+zwrap.addEventListener('click',function(e){ if(e.target===zwrap) closeZoom(); });
+var drag=null; var clickTimer=null; var laser=document.getElementById('laser'); var laserOn=false;
+zwrap.addEventListener('mousedown',function(e){ if(!zoom.classList.contains('one'))return; drag={x:e.clientX,y:e.clientY,l:zwrap.scrollLeft,t:zwrap.scrollTop}; e.preventDefault(); });
+window.addEventListener('mousemove',function(e){ if(!drag)return; zwrap.scrollLeft=drag.l-(e.clientX-drag.x); zwrap.scrollTop=drag.t-(e.clientY-drag.y); });
+window.addEventListener('mouseup',function(){ drag=null; });
+document.addEventListener('click',function(e){
+ if(!e.target||!e.target.closest) return;
+ var im=e.target.closest('.slides img, .stack img');
+ if(im){
+  if(e.shiftKey){ prev(); return; }
+  if(clickTimer){ clearTimeout(clickTimer); clickTimer=null; openZoom(im.getAttribute('src')); return; }
+  clickTimer=setTimeout(function(){ clickTimer=null; next(); },280);
+  return;
+ }
+ var dm=e.target.closest('.dot'); if(dm) return;
+ var gb=e.target.closest('.gbtn');
+ if(gb){
+  var pg=gb.closest('.page'); if(!pg) return;
+  var a=gals[idxMap[pg.id]]; if(!a) return;
+  gTo(idxMap[pg.id], a.idx+parseInt(gb.getAttribute('data-dir'),10));
+  return;
+ }
+ var ni=e.target.closest('.ni');
+ if(ni){ go(idxMap[ni.getAttribute('data-goto')]); return; }
+ if(e.target.closest('#zoom,#help')) return;
+ var hm=e.target.closest('.hcard');
+ if(hm) return;
+ if(help.classList.contains('on')){ help.classList.remove('on'); return; }
+ if(zoom.classList.contains('on')) return;
+ if(e.shiftKey){ prev(); } else { next(); }
+});
+document.addEventListener('contextmenu',function(e){
+ e.preventDefault();
+ laserOn=!laserOn;
+ laser.classList.toggle('on',laserOn);
+ document.body.classList.toggle('laserhide',laserOn);
+ if(laserOn){ laser.style.left=e.clientX+'px'; laser.style.top=e.clientY+'px'; }
+});
+document.addEventListener('mousemove',function(e){ if(laserOn){ laser.style.left=e.clientX+'px'; laser.style.top=e.clientY+'px'; } });
+document.addEventListener('keydown',function(e){
+ var zOn=zoom.classList.contains('on'), hOn=help.classList.contains('on');
+ if(e.key==='Escape'){ if(laserOn){laserOn=false;laser.classList.remove('on');document.body.classList.remove('laserhide');return;} if(zOn){closeZoom();} else if(hOn){help.classList.remove('on');} return; }
+ if(zOn) return;
+ if(e.key==='h'||e.key==='H'||e.key==='?'){ help.classList.toggle('on'); return; }
+ if(hOn) return;
+ switch(e.key){
+  case 'ArrowRight': case ' ': case 'PageDown': case 'ArrowDown': e.preventDefault(); next(); break;
+  case 'ArrowLeft': case 'PageUp': case 'ArrowUp': e.preventDefault(); prev(); break;
+  case 'Home': go(0); break;
+  case 'End': go(endMain); break;
+  case 'a': case 'A': go(idxMap['ax-1']); break;
+  case 'f': case 'F': if(document.fullscreenElement){document.exitFullscreen();} else if(document.documentElement.requestFullscreen){document.documentElement.requestFullscreen();} break;
+ }
+});
+var h0=location.hash.replace('#','');
+if(h0&&idxMap.hasOwnProperty(h0)){go(idxMap[h0]);}else{go(0);}
+window.addEventListener('hashchange',function(){var h2=location.hash.replace('#','');if(h2&&idxMap.hasOwnProperty(h2)&&idxMap[h2]!==cur){go(idxMap[h2]);}});
+})();
+</script>
+</body>
+</html>
